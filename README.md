@@ -1,4 +1,4 @@
-<img src="docs/img/square_logo.svg" align="right" width="25%"/>
+<img src="docs/img/robustprothestics.png" align="right" width="25%"/>
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/toanngosy/robustprothestics/blob/master/LICENSE.md)
 
