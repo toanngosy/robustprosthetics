@@ -8,5 +8,5 @@ This project is conducted by a group of students from University of Technology o
 
 # More information
 - [Documentation]()
-- [Installation instructions](instructions/)
+- [Installation instructions](https://github.com/toanngosy/robustprothestics/blob/master/installation/installation_instruction.ipynb)
 - [Result]()
