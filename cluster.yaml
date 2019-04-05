@@ -37,7 +37,7 @@ idle_timeout_minutes: 5
 provider:
     type: gcp
     region: us-west1
-    availability_zone: us-west1-a
+    availability_zone: us-west1-b
     project_id: robustprothestics  # Globally unique project id
 
 # How Ray will authenticate with newly launched nodes.
@@ -62,8 +62,17 @@ head_node:
         initializeParams:
           diskSizeGb: 50
           # See https://cloud.google.com/compute/docs/images for more images
-          sourceImage: projects/ml-images/global/images/family/tf-1-13-gpu
+          sourceImage: projects/deeplearning-platform-release/global/images/family/tf-latest-gpu
 
+    guestAccelerators:
+      - acceleratorType: projects/robustprothestics/zones/us-west1-b/acceleratorTypes/nvidia-teslas-k80
+        acceleratorCount: 1
+    metadata:
+      items:
+        - key: install-nvidia-driver
+          value: "True"
+    scheduling:
+      - onHostMaintenance: TERMINATE
     # Additional options can be found in in the compute docs at
     # https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
 
@@ -85,11 +94,20 @@ worker_nodes:
         initializeParams:
           diskSizeGb: 50
           # See https://cloud.google.com/compute/docs/images for more images
-          sourceImage: projects/ml-images/global/images/family/tf-1-13-gpu
+          sourceImage: projects/deeplearning-platform-release/global/images/family/tf-latest-gpu
+
+    guestAccelerators:
+      - acceleratorType: projects/robustprothestics/zones/us-west1-b/acceleratorTypes/nvidia-tesla-k80
+        acceleratorCount: 1
+    metadata:
+      items:
+        - key: install-nvidia-driver
+          value: "True"
     # Run workers on preemtible instance by default.
     # Comment this out to use on-demand.
     scheduling:
       - preemptible: true
+      - onHostMaintenance: TERMINATE
 
     # Additional options can be found in in the compute docs at
     # https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
@@ -104,7 +122,14 @@ file_mounts: {
 # List of commands that will be run before `setup_commands`. If docker is
 # enabled, these commands will run outside the container and before docker
 # is setup.
-initialization_commands: []
+initialization_commands: 
+    # Wait until nvidia drivers are installed
+    - >-
+      timeout 300 bash -c "
+          command -v nvidia-smi && nvidia-smi
+          until [ \$? -eq 0 ]; do
+              command -v nvidia-smi && nvidia-smi
+          done"
 
 # List of shell commands to run to set up nodes.
 setup_commands:
