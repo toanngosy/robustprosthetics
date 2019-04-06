@@ -1,5 +1,5 @@
 # An unique identifier for the head node and workers of this cluster.
-cluster_name: default
+cluster_name: gpu_docker
 
 # The minimum number of workers nodes to launch in addition to the head
 # node. This number should be >= 0.
@@ -18,10 +18,10 @@ initial_workers: 0
 # and opens all the necessary ports to support the Ray cluster.
 # Empty string means disabled.
 docker:
-    image: "" # e.g., tensorflow/tensorflow:1.5.0-py3
-    container_name: "" # e.g. ray_docker
-    run_options: []  # Extra options to pass into "docker run"
-
+    image: "tensorflow/tensorflow:1.12.0-gpu-py3" # e.g., tensorflow/tensorflow:1.5.0-py3
+    container_name: "ray-nvidia-docker" # e.g. ray_docker
+    run_options:  # Extra options to pass into "docker run"
+      - --runtime=nvidia
 
 # The autoscaler will scale up the cluster to this target fraction of resource
 # usage. For example, if a cluster of 10 nodes is 100% busy and
