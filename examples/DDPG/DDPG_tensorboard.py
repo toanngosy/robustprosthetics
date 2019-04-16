@@ -1,8 +1,15 @@
 ##### IMPORTATION DES LIBRAIRIES #####
 import numpy as np
 import sys
+sys.path.append('../../util/')
+sys.path.append('../../models')
+sys.path.append('../../')
+from save_train_test import save_plot_reward, save_result
+from check_files import check_xml, check_overwrite
 from osim.env import L2RunEnv
 from osim.http.client import Client
+
+import json
 
 
 from keras.models import Sequential, Model
@@ -14,11 +21,7 @@ from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
 import argparse
 from datetime import datetime
-
-sys.path.append('../../util/')
-sys.path.append('../../models')
-sys.path.append('../../')
-
+ 
 from robustensorboard import RobustTensorBoard
 #from save_train_test import save_plot_reward, save_result
 #from check_files import check_xml, check_overwrite
@@ -26,6 +29,7 @@ from robustensorboard import RobustTensorBoard
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
+parser.add_argument('--step', dest='step', action='store', default=100000)
 parser.add_argument('--train', dest='train', action='store_true', default=True)
 parser.add_argument('--test', dest='train', action='store_false', default=True)
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
@@ -34,27 +38,28 @@ args = parser.parse_args()
 
 
 # #### Verification fichiers ######
-#check_xml()
+check_xml()
 
-# #### INITIALISATION DES CONSTANTES #####
-# # Model ##
-SIZE_HIDDEN_LAYER_ACTOR = 300
-LR_ACTOR = 0.001
-SIZE_HIDDEN_LAYER_CRITIC = 400
-LR_CRITIC = 0.001
-DISC_FACT = 0.99
-TARGET_MODEL_UPDATE = 0.001
-BATCH_SIZE = 32
-REPLAY_BUFFER_SIZE = 100000
-
-# # Exploration ##
-THETA = 0.15
-SIGMA = 0.2
+# #### RECUPERATION DES PARAMETRES #####
+with open('parameters.json') as json_file:  
+    data = json.load(json_file)
+    ## Model ##
+    SIZE_HIDDEN_LAYER_ACTOR = data['SIZE_HIDDEN_LAYER_ACTOR']
+    LR_ACTOR = data['LR_ACTOR']
+    SIZE_HIDDEN_LAYER_CRITIC = data['SIZE_HIDDEN_LAYER_CRITIC']
+    LR_CRITIC = data['LR_CRITIC']
+    DISC_FACT = data['DISC_FACT']
+    TARGET_MODEL_UPDATE = data['TARGET_MODEL_UPDATE']
+    BATCH_SIZE = data['BATCH_SIZE']
+    REPLAY_BUFFER_SIZE = data['REPLAY_BUFFER_SIZE']
+    ## Exploration ##
+    THETA = data['THETA']
+    SIGMA = data['SIGMA']
 
 params = [SIZE_HIDDEN_LAYER_ACTOR, LR_ACTOR, SIZE_HIDDEN_LAYER_CRITIC, LR_CRITIC, DISC_FACT, TARGET_MODEL_UPDATE, BATCH_SIZE, REPLAY_BUFFER_SIZE, THETA, SIGMA]
 
 # # Simulation ##
-N_STEPS_TRAIN = 1000
+N_STEPS_TRAIN = int(args.step)
 N_EPISODE_TEST = 100
 if args.visualize:
     N_EPISODE_TEST = 3
@@ -62,14 +67,14 @@ VERBOSE = 1
 # 0: pas de descriptif
 # 1: descriptif toutes les LOG_INTERVAL steps
 # 2: descriptif à chaque épisode
-LOG_INTERVAL = 10
+LOG_INTERVAL = 10000
 
 # Save weights ##
 FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
-env = L2RunEnv(visualize=args.visualize)
+env = L2RunEnv(visualize=args.visualize, integrator_accuracy = 0.005)
 # env.seed(1234)  # for comparison
 env.reset()
 
@@ -143,13 +148,11 @@ agent.compile(optimizer=[opti_critic, opti_actor])
 
 # #### TRAIN #####
 
-
 logdir = "keras_logs/" + datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
 robustensorboard = RobustTensorBoard(log_dir=logdir)
 
-
 if args.train:
-    # check_overwrite(args.model)
+    check_overwrite(args.model)
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
               verbose=VERBOSE, log_interval=LOG_INTERVAL,
               callbacks=[robustensorboard])
