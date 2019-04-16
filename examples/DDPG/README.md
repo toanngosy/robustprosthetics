@@ -13,6 +13,7 @@ Solution :
 
 ## Utilisation
 
+0. **Mettre le dossier "osim" à la racine du projet**
 1. **activation de l'environnement** : `activate opensim-rl`
 2. **phase d'entrainement** : `python DDPG.py --train`, options possibles : 
     - `--visualize` : permet de lancer le rendu de la simulation (False par défaut)
