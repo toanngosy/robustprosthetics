@@ -6,7 +6,7 @@ import sys
 
 def check_xml():
     filepath = './compare/results.xlsx'
-    wb=load_workbook(filepath)
+    wb = load_workbook(filepath)
     try:
         wb.save(filepath)
     except PermissionError as error:

@@ -2,14 +2,16 @@ import timeit
 # TensorBoard to monitor
 from keras.callbacks import TensorBoard
 import numpy as np
-
+from tensorflow.contrib.training import HParams
+import tensorflow as tf
 
 class RobustTensorBoard(TensorBoard):
     """
     Subclassing of tensorboard to log and visualize custom metrics and others
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, hyperparams, *args, **kwargs):
 
+        self.hyperparams = hyperparams
         self.episode_start = {}
         self.observations = {}
         self.rewards = {}
@@ -55,7 +57,24 @@ class RobustTensorBoard(TensorBoard):
         del self.metrics[episode]
 
     def on_train_begin(self, logs):
-        pass
+        hyperparameters = [tf.convert_to_tensor([k, str(v)]) for k, v in self.hyperparams.items()]
+        hyper = tf.summary.text('hyperparameters', tf.stack(hyperparameters))
+        with tf.Session() as sess:
+            s = sess.run(hyper)
+            self.writer.add_summary(s)
 
     def on_train_end(self, logs):
+        """hparams = HParams(SIZE_HIDDEN_LAYER_ACTOR=self.hyperparams[0],
+                                                  LR_ACTOR=self.hyperparams[1],
+                                                  SIZE_HIDDEN_LAYER_CRITIC=self.hyperparams[2],
+                                                  LR_CRITIC=self.hyperparams[3],
+                                                  DISC_FACT=self.hyperparams[4],
+                                                  TARGET_MODEL_UPDATE=self.hyperparams[5],
+                                                  BATCH_SIZE=self.hyperparams[6],
+                                                  REPLAY_BUFFER_SIZE=self.hyperparams[7],
+                                                  THETA=self.hyperparams[8],
+                                                  SIGMA=self.hyperparams[9]
+                                                  )"""
         pass
+
+
