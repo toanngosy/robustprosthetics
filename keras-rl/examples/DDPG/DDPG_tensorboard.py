@@ -15,24 +15,25 @@ from keras.optimizers import Adam, SGD, RMSprop
 from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
+
 import argparse
 from datetime import datetime
 import json
 from robustensorboard import RobustTensorBoard
-#from save_train_test import save_plot_reward, save_result
-#from check_files import check_xml, check_overwrite
+from check_files import check_xml, check_overwrite
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
+parser.add_argument('--step', dest='step', action='store', default=2000)
 parser.add_argument('--train', dest='train', action='store_true', default=True)
 parser.add_argument('--test', dest='train', action='store_false', default=True)
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
-parser.add_argument('--model', dest='model', action='store', default="default")
+parser.add_argument('--model', dest='model', action='store', default="0")
 args = parser.parse_args()
 
 
 # #### Verification fichiers ######
-#check_xml()
+# check_xml()
 
 # #### INITIALISATION DES CONSTANTES #####
 with open('parameters.json') as json_file:
@@ -51,7 +52,7 @@ with open('parameters.json') as json_file:
     SIGMA = data['SIGMA']
 
 # # Simulation ##
-N_STEPS_TRAIN = 1000
+N_STEPS_TRAIN = int(args.step)
 N_EPISODE_TEST = 100
 if args.visualize:
     N_EPISODE_TEST = 3
@@ -59,7 +60,7 @@ VERBOSE = 1
 # 0: pas de descriptif
 # 1: descriptif toutes les LOG_INTERVAL steps
 # 2: descriptif à chaque épisode
-LOG_INTERVAL = 10
+LOG_INTERVAL = 1000
 
 # Save weights ##
 FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
@@ -145,15 +146,15 @@ logdir = "keras_logs/" + datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
 robustensorboard = RobustTensorBoard(log_dir=logdir, hyperparams=data)
 
 if args.train:
-    #check_overwrite(args.model)
+    check_overwrite(args.model)
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
               verbose=VERBOSE, log_interval=LOG_INTERVAL,
               callbacks=[robustensorboard])
 
-    #agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+    agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
 
 
-# #### TEST #####
-#if not args.train:
-#    agent.load_weights(FILES_WEIGHTS_NETWORKS)
-#    agent.test(env, nb_episodes=N_EPISODE_TEST, visualize=args.visualize)
+#### TEST #####
+if not args.train:
+   agent.load_weights(FILES_WEIGHTS_NETWORKS)
+   agent.test(env, nb_episodes=N_EPISODE_TEST, visualize=args.visualize)
