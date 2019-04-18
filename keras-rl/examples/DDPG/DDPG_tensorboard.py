@@ -5,8 +5,8 @@ sys.path.append('../../models')
 sys.path.append('../../')
 
 import numpy as np
-
-from osim.env import L2RunEnv
+import os
+from osim.env import L2RunEnv, ProstheticsEnv
 from osim.http.client import Client
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Add, concatenate
@@ -29,6 +29,7 @@ parser.add_argument('--train', dest='train', action='store_true', default=True)
 parser.add_argument('--test', dest='train', action='store_false', default=True)
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
 parser.add_argument('--model', dest='model', action='store', default="0")
+parser.add_argument('--prosthetic', dest='prosthetic', action='store_true', default=False)
 args = parser.parse_args()
 
 
@@ -50,7 +51,7 @@ with open('parameters.json') as json_file:
     ## Exploration ##
     THETA = data['THETA']
     SIGMA = data['SIGMA']
-
+        
 # # Simulation ##
 N_STEPS_TRAIN = int(args.step)
 N_EPISODE_TEST = 100
@@ -63,12 +64,25 @@ VERBOSE = 1
 LOG_INTERVAL = 1000
 
 # Save weights ##
+if not os.path.exists('weights'):
+    os.mkdir('weights')
+    print("Directory " , 'weights' ,  " Created ")
 FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
-env = L2RunEnv(visualize=args.visualize, integrator_accuracy = 0.005)
+if args.prosthetic:
+    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy = 0.005)
+if not args.prosthetic:
+    env = L2RunEnv(visualize=args.visualize, integrator_accuracy = 0.005)
 # env.seed(1234)  # for comparison
+
+# Redefinition of the reward function ##
+#def new_reward():
+#        print('#####Test State: ', env.get_state_desc())
+#        return 1
+#env.reward = new_reward
+
 env.reset()
 
 # Examine the action space ##
@@ -86,7 +100,11 @@ print('Size of state:', state_size)
 
 # #### ACTOR / CRITIC #####
 # Actor (mu) ##
-input_shape = (1, env.observation_space.shape[0] + 2)
+if args.prosthetic:
+    input_shape = (1, env.observation_space.shape[0])
+if not args.prosthetic:
+    input_shape = (1, env.observation_space.shape[0] + 2)
+
 observation_input = Input(shape=input_shape, name='observation_input')
 
 print("env.observation_space.shape")
