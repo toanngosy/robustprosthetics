@@ -51,7 +51,7 @@ with open('parameters.json') as json_file:
     ## Exploration ##
     THETA = data['THETA']
     SIGMA = data['SIGMA']
-        
+
 # # Simulation ##
 N_STEPS_TRAIN = int(args.step)
 N_EPISODE_TEST = 100
@@ -66,15 +66,15 @@ LOG_INTERVAL = 1000
 # Save weights ##
 if not os.path.exists('weights'):
     os.mkdir('weights')
-    print("Directory " , 'weights' ,  " Created ")
+    print("Directory ", 'weights',  " Created ")
 FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
 if args.prosthetic:
-    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy = 0.005)
+    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy=0.005)
 if not args.prosthetic:
-    env = L2RunEnv(visualize=args.visualize, integrator_accuracy = 0.005)
+    env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
 # env.seed(1234)  # for comparison
 
 # Redefinition of the reward function ##
@@ -174,5 +174,5 @@ if args.train:
 
 #### TEST #####
 if not args.train:
-   agent.load_weights(FILES_WEIGHTS_NETWORKS)
-   agent.test(env, nb_episodes=N_EPISODE_TEST, visualize=args.visualize)
+    agent.load_weights(FILES_WEIGHTS_NETWORKS)
+    agent.test(env, nb_episodes=N_EPISODE_TEST, visualize=args.visualize)
