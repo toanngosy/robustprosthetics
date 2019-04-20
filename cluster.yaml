@@ -12,7 +12,7 @@ max_workers: 3
 # The initial number of worker nodes to launch in addition to the head
 # node. When the cluster is first brought up (or when it is refreshed with a
 # subsequent `ray up`) this number of nodes will be started.
-initial_workers: 1
+initial_workers: 0
 
 # This executes all commands on all nodes in the docker container,
 # and opens all the necessary ports to support the Ray cluster.
@@ -20,15 +20,13 @@ initial_workers: 1
 docker:
     container_name: "ray-nvidia-docker" # e.g. ray_docker
 
-    head_image: "tensorflow/tensorflow:1.13.1-gpu-py3"
+    head_image: "toanngosy/robustprosthetics:opensimrl-tensorflow-1.13.1-gpu-py3"
     head_run_options:
         - --runtime=nvidia
 
-    worker_image: "tensorflow/tensorflow:1.13.1-gpu-py3"
+    worker_image: "toanngosy/robustprosthetics:opensimrl-tensorflow-1.13.1-gpu-py3"
     worker_run_options:
         - --runtime=nvidia
-
-
 # The autoscaler will scale up the cluster to this target fraction of resource
 # usage. For example, if a cluster of 10 nodes is 100% busy and
 # target_utilization is 0.8, it would resize the cluster to 13. This fraction
@@ -92,13 +90,13 @@ worker_nodes:
           diskSizeGb: 50
           # See https://cloud.google.com/compute/docs/images for more images
           sourceImage: projects/deeplearning-platform-release/global/images/family/tf-1-13-cu100
-    guestAccelerators:
-      - acceleratorType: projects/robustprothestics/zones/us-west1-b/acceleratorTypes/nvidia-tesla-k80
-        acceleratorCount: 1
-    metadata:
-      items:
-        - key: install-nvidia-driver
-          value: "True"
+    #guestAccelerators:
+    #  - acceleratorType: projects/robustprothestics/zones/us-west1-b/acceleratorTypes/nvidia-tesla-k80
+    #    acceleratorCount: 1
+    #metadata:
+    #  items:
+    #    - key: install-nvidia-driver
+    #      value: "True"
     # Run workers on preemtible instance by default.
     # Comment this out to use on-demand.
     scheduling:
@@ -131,46 +129,33 @@ setup_commands:
     # - echo 'export PATH="$HOME/anaconda3/envs/tensorflow_p36/bin:$PATH"' >> ~/.bashrc
 
     # Install Anaconda.
-    - >-
-      wget https://repo.continuum.io/archive/Anaconda3-5.0.1-Linux-x86_64.sh -O ~/anaconda3.sh
-      || true
-      && bash ~/anaconda3.sh -b -p ~/anaconda3 || true
-      && rm ~/anaconda3.sh
-      && echo 'export PATH="$HOME/anaconda3/bin:$PATH"' >> ~/.profile
+    #- >-
+    #  wget https://repo.continuum.io/archive/Anaconda3-5.0.1-Linux-x86_64.sh -O ~/anaconda3.sh
+    #  || true
+    #  && /bin/bash ~/anaconda3.sh -b -p /root/anaconda3 || true
+    #  && rm ~/anaconda3.sh
+    #  && truncate -s -"$(tail -n1 ~/.profile | wc -c)" ~/.profile
+    #  && echo "tty -s && mesg n || true" >> ~/.profile
+    #  && echo "export PATH="/root/anaconda3/bin:$PATH"" >> ~/.profile
+    #  && echo "export PATH="/root/anaconda3/bin:$PATH/root/anaconda3/bin:$PATH"" >> ~/.bashrc
+    #  && . ~/.profile
+
 
     #- source
-    #- conda create -n opensim-rl -c kidzik opensim
+    #- /root/anaconda3/bin/conda install -c kidzik opensim
     #- source $HOME/anaconda3/bin/activate opensim-rl
-    #- conda install -c conda-forge lapack git
-    #- pip install git+https://github.com/stanfordnmbl/osim-rl.git
+    #- /root/anaconda3/bin/conda install -c conda-forge lapack git
+    #- /root/anaconda3/bin/python -m pip install git+https://github.com/stanfordnmbl/osim-rl.git
 
     # Install ray
     # - pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp27-cp27mu-manylinux1_x86_64.whl
     #- pip install -U cryptography
     #- apt-get install -y build-essential curl unzip psmisc python
     #- pip install ray[debug]
-    #- python -m pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp35-cp35m-manylinux1_x86_64.whl
-
-    #- pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp36-cp36m-manylinux1_x86_64.whl
-
-#setup_commands:
-    # Note: if you're developing Ray, you probably want to create an AMI that
-    # has your Ray repo pre-cloned. Then, you can replace the pip installs
-    # below with a git checkout <your_sha> (and possibly a recompile).
-    # - echo 'export PATH="$HOME/anaconda3/envs/tensorflow_p36/bin:$PATH"' >> ~/.bashrc
-
-    # Install Anaconda.
-
-    #- >-
-      #wget https://repo.continuum.io/archive/Anaconda3-5.0.1-Linux-x86_64.sh -O ~/anaconda3.sh
-
-    #&& bash ~/anaconda3.sh -b -p ~/anaconda3
-    #&& echo 'export PATH="$HOME/anaconda3/bin:$PATH"' >> ~/.profile
-    # Install ray
-    # - pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp27-cp27mu-manylinux1_x86_64.whl
-    #- pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp35-cp35m-manylinux1_x86_64.whl
-    #- pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp36-cp36m-manylinux1_x86_64.whl
-
+    #- python -m pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp35-cp35m-manylinux1_x86_64.whl
+    - python -m pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp36-cp36m-manylinux1_x86_64.whl
+    - python -m pip install ray[debug]
+    - python -m pip install ray[rllib]
 
 
 # Custom commands that will be run on the head node after common setup.
