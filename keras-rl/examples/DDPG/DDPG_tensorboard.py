@@ -51,6 +51,9 @@ with open('parameters.json') as json_file:
     ## Exploration ##
     THETA = data['THETA']
     SIGMA = data['SIGMA']
+    ## Acceleration ##
+    ACTION_REPETITION = data['ACTION_REPETITION']
+    INTEGRATOR_ACCURACY = data['INTEGRATOR_ACCURACY']
 
 # # Simulation ##
 N_STEPS_TRAIN = int(args.step)
@@ -72,7 +75,7 @@ FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
 if args.prosthetic:
-    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy=0.005)
+    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY)
 if not args.prosthetic:
     env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
 # env.seed(1234)  # for comparison
@@ -167,7 +170,7 @@ if args.train:
     check_overwrite(args.model)
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
               verbose=VERBOSE, log_interval=LOG_INTERVAL,
-              callbacks=[robustensorboard])
+              callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
 
     agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
 
