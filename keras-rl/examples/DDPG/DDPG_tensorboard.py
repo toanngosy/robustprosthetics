@@ -11,6 +11,7 @@ from osim.http.client import Client
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Add, concatenate
 from keras.layers.normalization import BatchNormalization
+from keras_layer_normalization import LayerNormalization
 from keras.optimizers import Adam, SGD, RMSprop
 from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
@@ -29,6 +30,7 @@ parser.add_argument('--train', dest='train', action='store_true', default=True)
 parser.add_argument('--test', dest='train', action='store_false', default=True)
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
 parser.add_argument('--model', dest='model', action='store', default="0")
+parser.add_argument('--resume', dest='resume', action='store_true', default=False)
 parser.add_argument('--prosthetic', dest='prosthetic', action='store_true', default=False)
 args = parser.parse_args()
 
@@ -110,16 +112,23 @@ if not args.prosthetic:
 
 observation_input = Input(shape=input_shape, name='observation_input')
 
-print("env.observation_space.shape")
-print(env.observation_space.shape)
-
 x = Flatten()(observation_input)
-x = Dense(SIZE_HIDDEN_LAYER_ACTOR, activation='relu')(x)
-x = Dense(SIZE_HIDDEN_LAYER_ACTOR, activation='relu')(x)
-x = Dense(SIZE_HIDDEN_LAYER_ACTOR, activation='relu')(x)
-# x = Dense(SIZE_HIDDEN_LAYER_ACTOR, activation = 'relu')(x)
-# x = Dense(SIZE_HIDDEN_LAYER_ACTOR, activation = 'relu')(x)
-x = Dense(action_size, activation='sigmoid')(x)
+
+x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
+# x = BatchNormalization()(x)
+x = Activation('relu')(x)
+
+x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
+# x = BatchNormalization()(x)
+x = Activation('relu')(x)
+
+x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
+# x = BatchNormalization()(x)
+x = Activation('relu')(x)
+
+x = Dense(action_size)(x)
+x = Activation('sigmoid')(x)
+
 actor = Model(inputs=observation_input, outputs=x)
 
 opti_actor = Adam(lr=LR_ACTOR)
@@ -130,12 +139,22 @@ action_input = Input(shape=(action_size,), name='action_input')
 
 x = Flatten()(observation_input)
 x = concatenate([action_input, x])
-x = Dense(SIZE_HIDDEN_LAYER_CRITIC, activation='relu')(x)
-x = Dense(SIZE_HIDDEN_LAYER_CRITIC, activation='relu')(x)
-x = Dense(SIZE_HIDDEN_LAYER_CRITIC, activation='relu')(x)
-# x = Dense(SIZE_HIDDEN_LAYER_CRITIC, activation = 'relu')(x)
-# x = Dense(SIZE_HIDDEN_LAYER_CRITIC, activation = 'relu')(x)
-x = Dense(1, activation='linear')(x)
+
+x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
+# x = BatchNormalization()(x)
+x = Activation('relu')(x)
+
+x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
+# x = BatchNormalization()(x)
+x = Activation('relu')(x)
+
+x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
+# x = BatchNormalization()(x)
+x = Activation('relu')(x)
+
+x = Dense(1)(x)
+x = Activation('linear')(x)
+
 critic = Model(inputs=[action_input, observation_input], outputs=x)
 
 opti_critic = Adam(lr=LR_CRITIC)
@@ -157,17 +176,19 @@ agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
                   gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
                   batch_size=BATCH_SIZE)
 
-
 agent.compile(optimizer=[opti_critic, opti_actor])
 
+
 # #### TRAIN #####
-
-
 logdir = "keras_logs/" + datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
 robustensorboard = RobustTensorBoard(log_dir=logdir, hyperparams=data)
 
 if args.train:
-    check_overwrite(args.model)
+    if args.resume:
+        agent.load_weights(FILES_WEIGHTS_NETWORKS)
+    else : 
+        check_overwrite(args.model)
+
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
               verbose=VERBOSE, log_interval=LOG_INTERVAL,
               callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
