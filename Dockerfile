@@ -31,9 +31,7 @@ ENV PATH /opt/conda/bin:$PATH
 
 #Install opensim-rl
 RUN conda update conda
-RUN conda create -n opensim-rl -c kidzik opensim python=3.6.1
-RUN echo "source activate opensim-rl" > ~/.bashrc
-ENV PATH /opt/conda/envs/opensim-rl/bin:$PATH
+RUN conda install -c kidzik opensim python=3.6.1
 RUN conda install -c conda-forge lapack git
 RUN pip --no-cache-dir install git+https://github.com/stanfordnmbl/osim-rl.git
 

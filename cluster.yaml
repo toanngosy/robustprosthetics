@@ -90,13 +90,13 @@ worker_nodes:
           diskSizeGb: 50
           # See https://cloud.google.com/compute/docs/images for more images
           sourceImage: projects/deeplearning-platform-release/global/images/family/tf-1-13-cu100
-    #guestAccelerators:
-    #  - acceleratorType: projects/robustprothestics/zones/us-west1-b/acceleratorTypes/nvidia-tesla-k80
-    #    acceleratorCount: 1
-    #metadata:
-    #  items:
-    #    - key: install-nvidia-driver
-    #      value: "True"
+    guestAccelerators:
+      - acceleratorType: projects/robustprothestics/zones/us-west1-b/acceleratorTypes/nvidia-tesla-k80
+        acceleratorCount: 1
+    metadata:
+      items:
+        - key: install-nvidia-driver
+          value: "True"
     # Run workers on preemtible instance by default.
     # Comment this out to use on-demand.
     scheduling:
