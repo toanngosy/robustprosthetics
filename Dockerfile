@@ -1,22 +1,11 @@
-FROM tensorflow/tensorflow:1.13.1-gpu-py3
+FROM nvidia/cuda:10.0-base-ubuntu16.04
 
-MAINTAINER toanngosy <toanngosy@gmail.com>
-
-ENTRYPOINT [ "/bin/bash", "-c" ]
+LABEL maintainer="toanngosy <toanngosy@gmail.com>"
 
 RUN apt-get update && apt-get install -y \
-        bc \
         build-essential \
         curl \
-        git \
-        nano \
-        pkg-config \
-        software-properties-common \
-        unzip \
-        vim \
         wget \
-        ant \
-        doxygen \
         && \
     apt-get clean && \
     apt-get autoremove && \
@@ -29,14 +18,7 @@ rm anaconda3.sh
 
 ENV PATH /opt/conda/bin:$PATH
 
-#Install opensim-rl
-RUN conda update conda
-RUN conda install -c kidzik opensim python=3.6.1
-RUN conda install -c conda-forge lapack git
-RUN pip --no-cache-dir install git+https://github.com/stanfordnmbl/osim-rl.git
 
 EXPOSE 8888 6006 5000
 
 WORKDIR /root
-
-
