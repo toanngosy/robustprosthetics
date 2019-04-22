@@ -20,11 +20,11 @@ initial_workers: 0
 docker:
     container_name: "ray-nvidia-docker" # e.g. ray_docker
 
-    head_image: "toanngosy/robustprosthetics:opensimrl-tensorflow-1.13.1-gpu-py3"
+    head_image: "toanngosy/robustprosthetics:latest"
     head_run_options:
         - --runtime=nvidia
 
-    worker_image: "toanngosy/robustprosthetics:opensimrl-tensorflow-1.13.1-gpu-py3"
+    worker_image: "toanngosy/robustprosthetics:latest"
     worker_run_options:
         - --runtime=nvidia
 # The autoscaler will scale up the cluster to this target fraction of resource
@@ -153,6 +153,10 @@ setup_commands:
     #- apt-get install -y build-essential curl unzip psmisc python
     #- pip install ray[debug]
     #- python -m pip install https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp35-cp35m-manylinux1_x86_64.whl
+    - conda install -c kidzik opensim python=3.6.1
+    - conda install -c anaconda tensorflow-gpu
+    - conda install -c conda-forge lapack git
+    - python -m pip --no-cache-dir install git+https://github.com/stanfordnmbl/osim-rl.git
     - python -m pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp36-cp36m-manylinux1_x86_64.whl
     - python -m pip install ray[debug]
     - python -m pip install ray[rllib]
