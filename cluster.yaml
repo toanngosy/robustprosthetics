@@ -160,6 +160,7 @@ setup_commands:
     - python -m pip install -U https://s3-us-west-2.amazonaws.com/ray-wheels/latest/ray-0.7.0.dev2-cp36-cp36m-manylinux1_x86_64.whl
     - python -m pip install ray[debug]
     - python -m pip install ray[rllib]
+    - python -m pip install -U dask
 
 
 # Custom commands that will be run on the head node after common setup.
