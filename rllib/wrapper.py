@@ -2,6 +2,7 @@ import gym
 import numpy as np
 
 
+# wrapper for observation
 class NoObstacleObservationWrapper(gym.ObservationWrapper):
     def __init__(self, env):
         super(NoObstacleObservationWrapper, self).__init__(env)
@@ -45,3 +46,22 @@ class RelativeMassCenterObservationWrapper(gym.ObservationWrapper):
         observation[31] -= observation[33]  # relative Talus_r Position Y axis
 
         return observation
+
+# wrapper for reward
+class PriorityPelvisRewardWrapper(gym.RewardWrapper):
+    def __init__(self, env):
+        super(PriorityPelvisRewardWrapper, self).__init__(env)
+
+    def reward(self, reward):
+        state_desc = self.env.get_state_desc()
+        prev_state_desc = self.env.get_prev_state_desc()
+        reward = state_desc['body_pos']['pelvis'][0]*10
+
+        if prev_state_desc \
+                and ((state_desc["joint_pos"]["ground_pelvis"][1] \
+                     - prev_state_desc["joint_pos"]["ground_pelvis"][1]) < 0.005) \
+                and (state_desc["body_pos"]["pelvis"][0]) > 0:
+
+            reward -= state_desc["body_pos"]["pelvis"][0] * 20
+
+        return reward
