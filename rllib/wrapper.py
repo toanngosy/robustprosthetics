@@ -67,7 +67,16 @@ class PriorityPelvisRewardWrapper(gym.RewardWrapper):
         return reward
 
 
+class MassCenterRewardWrapper(gym.RewardWrapper):
+    def __init__(self, env):
+        super(MassCenterRewardWrapper, self).__init__(env)
 
+    def reward(self, reward):
+        state_desc = self.get_state_desc()
+        prev_state_desc = self.get_prev_state_desc()
+        if not prev_state_desc:
+            return 0
+        return state_desc["misc"]["mass_center_pos"][1] - prev_state_desc["misc"]["mass_center_pos"][1]
 
 # wrapper for reward
 class CustomRewardWrapper(gym.RewardWrapper):
@@ -99,7 +108,7 @@ class CustomRewardWrapper(gym.RewardWrapper):
         mass_center_vel = state_desc["misc"]["mass_center_vel"]
 
 
-        # LEGS : ensure that at least one leg is moving   
+        # LEGS : ensure that at least one leg is moving
         speed_l= math.sqrt(talus_l_vel[0]**2 + talus_l_vel[1]**2)
         speed_r= math.sqrt(talus_r_vel[0]**2 + talus_r_vel[1]**2)
         speed_feet_max = max(speed_l, speed_r)
@@ -135,9 +144,9 @@ class CustomRewardWrapper(gym.RewardWrapper):
 
         if diff_foot > foot_split_treshold:
             foot_split_penalty = -diff_foot
-    
 
-        # FEET : ensure that at least one foot is behind        
+
+        # FEET : ensure that at least one foot is behind
         diff_foot_l_pelvis = talus_l[0] - pelvis[0]
         diff_foot_r_pelvis = talus_r[0] - pelvis[0]
         diff_foot_pelvis_min = min(diff_foot_l_pelvis, diff_foot_r_pelvis)
@@ -161,12 +170,12 @@ class CustomRewardWrapper(gym.RewardWrapper):
             mass_center_y_penalty = -0.1
 
 
-        # MASS CENTER : make sure you go forward 
+        # MASS CENTER : make sure you go forward
         if mass_center_vel[0] > 0.1:
             mass_center_vel_penalty = mass_center_vel[0]
         else:
             mass_center_vel_penalty = -0.1
-        
+
         reward = math.log(1+mass_center_pos[0]) + legs_directions_penalty + mass_center_vel_penalty + mass_center_y_penalty + angle_pelvis_head_penalty + foot_split_penalty + foot_pelvis_penalty + velocity_feet_penalty + feet_y_penalty
 
         if  mass_center_pos[1] < 0.8 or head[0] < -0.25 or head[1] < 1.35 or diff_foot > 1.3:
@@ -182,7 +191,7 @@ class CustomRewardWrapper(gym.RewardWrapper):
         # print( "legs_directions_penalty : ", legs_directions_penalty)
         # print("reward : ", reward)
 
-        
+
         if not prev_state_desc:
             return 0
         return reward
