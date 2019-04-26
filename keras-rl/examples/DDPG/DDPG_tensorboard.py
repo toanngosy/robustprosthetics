@@ -186,7 +186,7 @@ robustensorboard = RobustTensorBoard(log_dir=logdir, hyperparams=data)
 if args.train:
     if args.resume:
         agent.load_weights(FILES_WEIGHTS_NETWORKS)
-    else : 
+    else :
         check_overwrite(args.model)
 
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,

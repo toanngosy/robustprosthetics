@@ -65,3 +65,14 @@ class PriorityPelvisRewardWrapper(gym.RewardWrapper):
             reward -= state_desc["body_pos"]["pelvis"][0] * 20
 
         return reward
+
+class MassCenterRewardWrapper(gym.RewardWrapper):
+    def __init__(self, env):
+        super(MassCenterRewardWrapper, self).__init__(env)
+
+    def reward(self, reward):
+        state_desc = self.get_state_desc()
+        prev_state_desc = self.get_prev_state_desc()
+        if not prev_state_desc:
+            return 0
+        return state_desc["misc"]["mass_center_pos"][1] - prev_state_desc["misc"]["mass_center_pos"][1]
