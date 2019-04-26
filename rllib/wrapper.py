@@ -1,7 +1,6 @@
 import gym
 import numpy as np
 
-
 # wrapper for observation
 class NoObstacleObservationWrapper(gym.ObservationWrapper):
     def __init__(self, env):
@@ -91,7 +90,7 @@ class CustomRewardWrapper(gym.RewardWrapper):
         feet_y_penalty = 0
         legs_directions_penalty = 0
         velocity_feet_penalty = 0
-        knee_pelvis_penalty = 0
+        knee_pelvis_penalty = 0  # this feature is not used
 
         state_desc = self.get_state_desc()
         prev_state_desc = self.get_prev_state_desc()
@@ -107,17 +106,15 @@ class CustomRewardWrapper(gym.RewardWrapper):
         mass_center_pos = state_desc["misc"]["mass_center_pos"]
         mass_center_vel = state_desc["misc"]["mass_center_vel"]
 
-
         # LEGS : ensure that at least one leg is moving
-        speed_l= math.sqrt(talus_l_vel[0]**2 + talus_l_vel[1]**2)
-        speed_r= math.sqrt(talus_r_vel[0]**2 + talus_r_vel[1]**2)
+        speed_l = np.sqrt(talus_l_vel[0]**2 + talus_l_vel[1]**2)
+        speed_r = np.sqrt(talus_r_vel[0]**2 + talus_r_vel[1]**2)
         speed_feet_max = max(speed_l, speed_r)
 
         if speed_feet_max < 0.2:
             velocity_feet_penalty = -0.1
         else:
-            velocity_feet_penalty =  0
-
+            velocity_feet_penalty = 0
 
         # LEGS : ensure that legs move in different directions :
         if (talus_l_vel[0] < -0.1 and talus_r_vel[0] > 0.1) or (talus_r_vel[0] < -0.1 and talus_l_vel[0] > 0.1):
@@ -125,50 +122,44 @@ class CustomRewardWrapper(gym.RewardWrapper):
         else:
             legs_directions_penalty = -0.1
 
-
         # COMPUTE ANGLE between head and pelvis
         v0 = np.array(base) - np.array(pelvis[0:2])
         v1 = np.array(head[0:2]) - np.array(pelvis[0:2])
-        angle_pelvis_head = np.degrees(np.math.atan2(np.linalg.det([v0,v1]),np.dot(v0,v1)))
+        angle_pelvis_head = np.degrees(np.math.atan2(np.linalg.det([v0, v1]), np.dot(v0, v1)))
 
         if angle_pelvis_head < 0:
             angle_pelvis_head_penalty = -0.1
-        elif angle_pelvis_head < 90  and angle_pelvis_head > 70:
+        elif angle_pelvis_head < 90 and angle_pelvis_head > 70:
             angle_pelvis_head_penalty = 0
         else:
             angle_pelvis_head_penalty = -0.1
 
-
         # FEET : Ensure that feet are not too split
-        diff_foot = math.hypot(talus_r[0] - talus_l[0], talus_r[1] - talus_l[1])
+        diff_foot = np.hypot(talus_r[0] - talus_l[0], talus_r[1] - talus_l[1])
 
         if diff_foot > foot_split_treshold:
             foot_split_penalty = -diff_foot
-
 
         # FEET : ensure that at least one foot is behind
         diff_foot_l_pelvis = talus_l[0] - pelvis[0]
         diff_foot_r_pelvis = talus_r[0] - pelvis[0]
         diff_foot_pelvis_min = min(diff_foot_l_pelvis, diff_foot_r_pelvis)
 
-        if diff_foot_pelvis_min < 0 and velocity_feet_penalty==0.1 :
-            foot_pelvis_penalty =  0
+        if diff_foot_pelvis_min < 0 and velocity_feet_penalty == 0.1:
+            foot_pelvis_penalty = 0
         else:
             foot_pelvis_penalty = -0.1
-
 
         # FEET : ensure feet are not too high
         feet_y_max = max(talus_l[1], talus_r[1])
         if feet_y_max > 0.4:
             feet_y_penalty = -0.1
 
-
         # MASS CENTER : ensure that mass center isn't too low
-        if mass_center_pos[1] < 1.1  and mass_center_pos[1] > 0.85:
+        if mass_center_pos[1] < 1.1 and mass_center_pos[1] > 0.85:
             mass_center_y_penalty = 0
         else:
             mass_center_y_penalty = -0.1
-
 
         # MASS CENTER : make sure you go forward
         if mass_center_vel[0] > 0.1:
@@ -176,9 +167,12 @@ class CustomRewardWrapper(gym.RewardWrapper):
         else:
             mass_center_vel_penalty = -0.1
 
-        reward = math.log(1+mass_center_pos[0]) + legs_directions_penalty + mass_center_vel_penalty + mass_center_y_penalty + angle_pelvis_head_penalty + foot_split_penalty + foot_pelvis_penalty + velocity_feet_penalty + feet_y_penalty
+        reward = np.log(1+mass_center_pos[0]) + legs_directions_penalty + \
+            mass_center_vel_penalty + mass_center_y_penalty + \
+            angle_pelvis_head_penalty + foot_split_penalty + \
+            foot_pelvis_penalty + velocity_feet_penalty + feet_y_penalty
 
-        if  mass_center_pos[1] < 0.8 or head[0] < -0.25 or head[1] < 1.35 or diff_foot > 1.3:
+        if mass_center_pos[1] < 0.8 or head[0] < -0.25 or head[1] < 1.35 or diff_foot > 1.3:
             reward = -2
 
         # print("###############")
@@ -191,13 +185,6 @@ class CustomRewardWrapper(gym.RewardWrapper):
         # print( "legs_directions_penalty : ", legs_directions_penalty)
         # print("reward : ", reward)
 
-
         if not prev_state_desc:
             return 0
         return reward
-
-
-
-
-
-
