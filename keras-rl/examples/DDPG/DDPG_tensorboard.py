@@ -78,7 +78,7 @@ FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
 if args.prosthetic:
-    env = CustomDoneWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
+    env = CustomRewardWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
 if not args.prosthetic:
     env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
 # env.seed(1234)  # for comparison
@@ -187,7 +187,7 @@ robustensorboard = RobustTensorBoard(log_dir=logdir, hyperparams=data)
 if args.train:
     if args.resume:
         agent.load_weights(FILES_WEIGHTS_NETWORKS)
-    else :
+    else:
         check_overwrite(args.model)
 
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
