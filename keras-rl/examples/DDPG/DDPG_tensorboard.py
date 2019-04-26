@@ -23,6 +23,7 @@ import json
 from robustensorboard import RobustTensorBoard
 from check_files import check_xml, check_overwrite
 from wrapper import *
+from symmetricDDPG import *
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
@@ -109,7 +110,7 @@ print('Size of state:', state_size)
 if args.prosthetic:
     input_shape = (1, env.observation_space.shape[0])
 if not args.prosthetic:
-    input_shape = (1, env.observation_space.shape[0] + 2)
+    input_shape = (1, env.observation_space.shape[0])
 
 observation_input = Input(shape=input_shape, name='observation_input')
 
@@ -171,11 +172,11 @@ random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
                                           size=action_size)
 
 # Paramètres agent DDPG ##
-agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
-                  critic_action_input=action_input,
-                  memory=memory, random_process=random_process,
-                  gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
-                  batch_size=BATCH_SIZE)
+agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+                           critic_action_input=action_input,
+                           memory=memory, random_process=random_process,
+                           gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
+                           batch_size=BATCH_SIZE)
 
 agent.compile(optimizer=[opti_critic, opti_actor])
 
