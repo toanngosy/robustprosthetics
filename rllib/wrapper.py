@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+from osim.env import OsimEnv
 
 # wrapper for observation
 class NoObstacleObservationWrapper(gym.ObservationWrapper):
@@ -188,3 +189,27 @@ class CustomRewardWrapper(gym.RewardWrapper):
         if not prev_state_desc:
             return 0
         return reward
+
+
+# is_done wrapper from Yann
+class CustomDoneWrapper(OsimEnv):
+    def __init__(self, env):
+        super(CustomDoneWrapper, self).__init__(env)
+
+    def is_done(self):
+        state_desc = self.get_state_desc()
+        prev_state_desc = self.get_prev_state_desc()
+
+        # DEFINITION OF USEFUL BODY PARTS
+        head = state_desc["body_pos"]["head"]
+        pelvis = state_desc["body_pos"]["pelvis"]
+        base = [head[0], pelvis[1]]
+        talus_r = state_desc["body_pos"]["talus_r"]
+        talus_l = state_desc["body_pos"]["talus_l"]
+        talus_r_vel = state_desc["body_vel"]["talus_r"]
+        talus_l_vel = state_desc["body_vel"]["talus_l"]
+        mass_center_pos = state_desc["misc"]["mass_center_pos"]
+        mass_center_vel = state_desc["misc"]["mass_center_vel"]
+        diff_foot = np.hypot(talus_r[0] - talus_l[0], talus_r[1] - talus_l[1])
+
+        return mass_center_pos[1] < 0.8 or head[0] < -0.3 or head[1] < 1.35 or diff_foot > 1.3

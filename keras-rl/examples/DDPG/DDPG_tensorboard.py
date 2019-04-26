@@ -3,6 +3,7 @@ import sys
 sys.path.append('../../util/')
 sys.path.append('../../models')
 sys.path.append('../../')
+sys.path.append('../../../rllib')
 
 import numpy as np
 import os
@@ -10,8 +11,7 @@ from osim.env import L2RunEnv, ProstheticsEnv
 from osim.http.client import Client
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Add, concatenate
-from keras.layers.normalization import BatchNormalization
-from keras_layer_normalization import LayerNormalization
+#from keras.layers.normalization import BatchNormalization, LayerNormalization
 from keras.optimizers import Adam, SGD, RMSprop
 from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
@@ -22,6 +22,7 @@ from datetime import datetime
 import json
 from robustensorboard import RobustTensorBoard
 from check_files import check_xml, check_overwrite
+from wrapper import *
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
@@ -77,7 +78,7 @@ FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
 if args.prosthetic:
-    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY)
+    env = CustomDoneWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
 if not args.prosthetic:
     env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
 # env.seed(1234)  # for comparison
