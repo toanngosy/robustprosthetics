@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 from osim.env import OsimEnv
+from osimwrapper import OsimWrapper
 
 # wrapper for observation
 class NoObstacleObservationWrapper(gym.ObservationWrapper):
@@ -191,10 +192,10 @@ class CustomRewardWrapper(gym.RewardWrapper):
         return reward
 
 
-# is_done wrapper from Yann
-class CustomDoneWrapper(OsimEnv):
+# wrapper for Custom Done Osim
+class CustomDoneOsimWrapper(OsimWrapper):
     def __init__(self, env):
-        super(CustomDoneWrapper, self).__init__(env)
+        super(CustomDoneOsimWrapper, self).__init__(env)
 
     def is_done(self):
         state_desc = self.get_state_desc()

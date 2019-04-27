@@ -91,7 +91,6 @@ if not args.prosthetic:
 #        print('#####Test State: ', env.get_state_desc())
 #        return 1
 #env.reward = new_reward
-
 env.reset()
 
 # Examine the action space ##
