@@ -22,7 +22,8 @@ from datetime import datetime
 import json
 from robustensorboard import RobustTensorBoard
 from check_files import check_xml, check_overwrite
-from wrapper import *
+
+import wrapper 
 from symmetricDDPG import *
 
 # #### RECUPERATION DES PARAMETRES #####
@@ -79,9 +80,10 @@ FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
 if args.prosthetic:
-    env = CustomRewardWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
+    env = wrapper.CustomRewardWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
 if not args.prosthetic:
-    env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
+    env = wrapper.CustomRewardWrapper(wrapper.RelativeMassCenterObservationWrapper(wrapper.NoObstacleObservationWrapper(L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005))))
+    # env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
 # env.seed(1234)  # for comparison
 
 # Redefinition of the reward function ##
@@ -172,7 +174,7 @@ random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
                                           size=action_size)
 
 # Paramètres agent DDPG ##
-agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
                            critic_action_input=action_input,
                            memory=memory, random_process=random_process,
                            gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
@@ -191,11 +193,17 @@ if args.train:
     else:
         check_overwrite(args.model)
 
+try:
     agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
               verbose=VERBOSE, log_interval=LOG_INTERVAL,
               callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
 
     agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+except KeyboardInterrupt:
+    print("interruption detected , saving weights....")
+    agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+    sys.exit()
+    
 
 
 #### TEST #####
