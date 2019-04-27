@@ -193,16 +193,15 @@ if args.train:
     else:
         check_overwrite(args.model)
 
-try:
-    agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
-              verbose=VERBOSE, log_interval=LOG_INTERVAL,
-              callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
+    try:
+        agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
+                verbose=VERBOSE, log_interval=LOG_INTERVAL,
+                callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
 
-    agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
-except KeyboardInterrupt:
-    print("interruption detected , saving weights....")
-    agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
-    sys.exit()
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+    except KeyboardInterrupt:
+        print("interruption detected , saving weights....")
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
     
 
 
