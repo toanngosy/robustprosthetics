@@ -214,3 +214,39 @@ class CustomDoneOsimWrapper(OsimWrapper):
         diff_foot = np.hypot(talus_r[0] - talus_l[0], talus_r[1] - talus_l[1])
 
         return mass_center_pos[1] < 0.8 or head[0] < -0.3 or head[1] < 1.35 or diff_foot > 1.3
+
+class AugmentedObservationWrapper(OsimWrapper):
+    def __init__(self, env):
+        super(CustomDoneOsimWrapper, self).__init__(env)
+
+    def get_observation(self):
+        state_desc = self.get_state_desc()
+
+        # Augmented environment from the L2R challenge
+        res = []
+        pelvis = None
+ 
+        res += state_desc["joint_pos"]["ground_pelvis"] 
+        res += state_desc["joint_vel"]["ground_pelvis"]
+
+        for joint in ["hip_l","hip_r","knee_l","knee_r","ankle_l","ankle_r",]:
+            res += state_desc["joint_pos"][joint]
+            res += state_desc["joint_vel"][joint]
+
+        for body_part in ["head", "pelvis", "torso", "toes_l", "toes_r", "talus_l", "talus_r"]:
+            res += state_desc["body_pos"][body_part][0:2]
+
+        res = res + state_desc["misc"]["mass_center_pos"] + state_desc["misc"]["mass_center_vel"]
+
+        for body_part in ["head", "pelvis", "torso", "toes_l", "toes_r", "talus_l", "talus_r"]:
+            res += state_desc["body_vel"][body_part][0:2] #39-52
+            if body_part == "pelvis":
+                res += state_desc["body_acc"][body_part][0:2] #53-66
+            else:
+                res += [state_desc["body_acc"][body_part][i] - state_desc["body_acc"]["pelvis"][i] for i in range(1)]
+                res += state_desc["body_acc"][body_part][1:2]
+        res += [0]*5
+        return res
+
+    def get_observation_space_size(self):
+        return 71
