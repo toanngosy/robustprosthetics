@@ -3,6 +3,7 @@ import sys
 sys.path.append('../../util/')
 sys.path.append('../../models')
 sys.path.append('../../')
+sys.path.append('../../../rllib')
 
 import numpy as np
 import os
@@ -10,8 +11,7 @@ from osim.env import L2RunEnv, ProstheticsEnv
 from osim.http.client import Client
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Add, concatenate
-from keras.layers.normalization import BatchNormalization
-from keras_layer_normalization import LayerNormalization
+#from keras.layers.normalization import BatchNormalization, LayerNormalization
 from keras.optimizers import Adam, SGD, RMSprop
 from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
@@ -22,6 +22,9 @@ from datetime import datetime
 import json
 from robustensorboard import RobustTensorBoard
 from check_files import check_xml, check_overwrite
+
+import wrapper 
+from symmetricDDPG import *
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
@@ -77,9 +80,10 @@ FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
 
 # #### CHARGEMENT DE L'ENVIRONNEMENT #####
 if args.prosthetic:
-    env = ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY)
+    env = wrapper.CustomRewardWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
 if not args.prosthetic:
-    env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
+    env = wrapper.CustomRewardWrapper(wrapper.RelativeMassCenterObservationWrapper(wrapper.NoObstacleObservationWrapper(L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005))))
+    # env = L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)
 # env.seed(1234)  # for comparison
 
 # Redefinition of the reward function ##
@@ -87,7 +91,6 @@ if not args.prosthetic:
 #        print('#####Test State: ', env.get_state_desc())
 #        return 1
 #env.reward = new_reward
-
 env.reset()
 
 # Examine the action space ##
@@ -108,7 +111,7 @@ print('Size of state:', state_size)
 if args.prosthetic:
     input_shape = (1, env.observation_space.shape[0])
 if not args.prosthetic:
-    input_shape = (1, env.observation_space.shape[0] + 2)
+    input_shape = (1, env.observation_space.shape[0])
 
 observation_input = Input(shape=input_shape, name='observation_input')
 
@@ -171,10 +174,10 @@ random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
 
 # Paramètres agent DDPG ##
 agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
-                  critic_action_input=action_input,
-                  memory=memory, random_process=random_process,
-                  gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
-                  batch_size=BATCH_SIZE)
+                           critic_action_input=action_input,
+                           memory=memory, random_process=random_process,
+                           gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
+                           batch_size=BATCH_SIZE)
 
 agent.compile(optimizer=[opti_critic, opti_actor])
 
@@ -186,14 +189,19 @@ robustensorboard = RobustTensorBoard(log_dir=logdir, hyperparams=data)
 if args.train:
     if args.resume:
         agent.load_weights(FILES_WEIGHTS_NETWORKS)
-    else : 
+    else:
         check_overwrite(args.model)
 
-    agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
-              verbose=VERBOSE, log_interval=LOG_INTERVAL,
-              callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
+    try:
+        agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
+                verbose=VERBOSE, log_interval=LOG_INTERVAL,
+                callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
 
-    agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+    except KeyboardInterrupt:
+        print("interruption detected , saving weights....")
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+    
 
 
 #### TEST #####
