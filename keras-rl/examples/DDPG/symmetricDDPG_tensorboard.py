@@ -16,7 +16,6 @@ from keras.optimizers import Adam, SGD, RMSprop
 #from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
-from prioritizedDDPG import *
 
 import argparse
 from datetime import datetime
@@ -26,6 +25,8 @@ from check_files import check_xml, check_overwrite
 
 from wrapper import *
 from symmetricDDPG import *
+
+from DDPGAgentTest import DDPGAgent
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
