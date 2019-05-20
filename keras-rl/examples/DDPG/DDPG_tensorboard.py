@@ -57,6 +57,8 @@ with open('parameters.json') as json_file:
     ## Exploration ##
     THETA = data['THETA']
     SIGMA = data['SIGMA']
+    NOISE_DECAY = data['NOISE_DECAY']
+
     ## Acceleration ##
     ACTION_REPETITION = data['ACTION_REPETITION']
     INTEGRATOR_ACCURACY = data['INTEGRATOR_ACCURACY']
@@ -173,11 +175,11 @@ random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
                                           size=action_size)
 
 # Paramètres agent DDPG ##
-agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
                            critic_action_input=action_input,
                            memory=memory, random_process=random_process,
                            gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
-                           batch_size=BATCH_SIZE)
+                           batch_size=BATCH_SIZE, noise_decay=NOISE_DECAY)
 
 agent.compile(optimizer=[opti_critic, opti_actor])
 

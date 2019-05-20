@@ -2,8 +2,10 @@ from rl.agents import DDPGAgent
 
 
 class SymmetricDDPGAgent(DDPGAgent):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, noise_decay, **kwargs):
+        DDPGAgent.__init__(self, **kwargs)
+        self.noise_decay = noise_decay
+        self.noise_coeff = noise_decay
 
     # TODO
 
@@ -29,10 +31,11 @@ class SymmetricDDPGAgent(DDPGAgent):
 
     def select_action(self, state):
 
-        state_left = state
-        state_right = self.process_state_right(state)
-        print("this asidfjisadfjisajfdijsdfis")
-        print(state_left[0][6] - state_right[0][8])
+        #TODO for the moment so i comment it 
+        # state_left = state
+        # state_right = self.process_state_right(state)
+        # print("this asidfjisadfjisajfdijsdfis")
+        # print(state_left[0][6] - state_right[0][8])
 
         batch = self.process_state_batch([state])
         action = self.actor.predict_on_batch(batch).flatten()
@@ -41,7 +44,10 @@ class SymmetricDDPGAgent(DDPGAgent):
         # Apply noise, if a random process is set.
         if self.training and self.random_process is not None:
             noise = self.random_process.sample()
+            noise = noise * self.noise_coeff
             assert noise.shape == action.shape
+            action += noise
+            self.noise_coeff = self.noise_coeff * self.noise_decay
             action += noise
 
         return action
@@ -55,5 +61,4 @@ class SymmetricDDPGAgent(DDPGAgent):
         # Book-keeping.
         self.recent_observation = observation
         self.recent_action = action
-
         return action
