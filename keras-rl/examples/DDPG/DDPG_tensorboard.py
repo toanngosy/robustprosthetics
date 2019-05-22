@@ -28,7 +28,7 @@ from symmetricDDPG import *
 
 # #### RECUPERATION DES PARAMETRES #####
 parser = argparse.ArgumentParser(description='Train or test neural net motor controller')
-parser.add_argument('--step', dest='step', action='store', default=2000)
+parser.add_argument('--step', dest='step', action='store', default=10000)
 parser.add_argument('--train', dest='train', action='store_true', default=True)
 parser.add_argument('--test', dest='train', action='store_false', default=True)
 parser.add_argument('--visualize', dest='visualize', action='store_true', default=False)
@@ -69,7 +69,7 @@ VERBOSE = 1
 # 0: pas de descriptif
 # 1: descriptif toutes les LOG_INTERVAL steps
 # 2: descriptif à chaque épisode
-LOG_INTERVAL = 1000
+LOG_INTERVAL = 500
 
 # Save weights ##
 if not os.path.exists('weights'):
@@ -173,11 +173,11 @@ random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
                                           size=action_size)
 
 # Paramètres agent DDPG ##
-agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
                            critic_action_input=action_input,
                            memory=memory, random_process=random_process,
                            gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
-                           batch_size=BATCH_SIZE)
+                           batch_size=BATCH_SIZE, nb_steps_warmup_critic=100)
 
 agent.compile(optimizer=[opti_critic, opti_actor])
 
