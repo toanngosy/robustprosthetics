@@ -96,7 +96,7 @@ if not args.prosthetic:
 #env.reward = new_reward
 env.reset()
 # Examine the action space ##
-action_size = env.action_space.shape[0]
+action_size = int(env.action_space.shape[0]/2)
 print('Size of each action:', action_size)
 action_low = env.action_space.low
 print('Action low:', action_low)
@@ -131,7 +131,9 @@ x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
 # x = BatchNormalization()(x)
 x = Activation('relu')(x)
 
-x = Dense(action_size)(x)
+# x = Dense(action_size)(x)     #without symmetry
+x = Dense(9)(x)
+
 x = Activation('sigmoid')(x)
 
 actor = Model(inputs=observation_input, outputs=x)
@@ -168,18 +170,30 @@ opti_critic = Adam(lr=LR_CRITIC)
 # #### SET UP THE AGENT #####
 # Initialize Replay Buffer ##
 memory = SequentialMemory(limit=REPLAY_BUFFER_SIZE, window_length=1)
+
+
 # window_length : usefull for Atari game (cb d'images d'affilé on veut analysé (vitesse de la balle, etc..))
 
 # Random process (exploration) ##
-random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
+# random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
+#                                           size=action_size)
+random_process_l = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
+                                          size=action_size)
+random_process_r = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
                                           size=action_size)
 
 # Paramètres agent DDPG ##
 agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
                            critic_action_input=action_input,
-                           memory=memory, random_process=random_process,
+                           memory=memory, random_process_l=random_process_l, random_process_r=random_process_r,
                            gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
-                           batch_size=BATCH_SIZE, noise_decay=NOISE_DECAY)
+                           batch_size=BATCH_SIZE, nb_steps_warmup_critic=1000, nb_steps_warmup_actor=1000, noise_decay=NOISE_DECAY)
+
+# agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+#                            critic_action_input=action_input,
+#                            memory=memory, random_process=random_process,
+#                            gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
+#                            batch_size=BATCH_SIZE, nb_steps_warmup_critic=1000, nb_steps_warmup_actor=1000, noise_decay=NOISE_DECAY)
 
 agent.compile(optimizer=[opti_critic, opti_actor])
 
