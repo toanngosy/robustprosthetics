@@ -7,9 +7,10 @@
     "TARGET_MODEL_UPDATE": [0.001],
     "BATCH_SIZE": [32],
     "REPLAY_BUFFER_SIZE": [100000],
-    "THETA": [0.2],
+    "THETA": [0.05],
     "SIGMA": [0.2],
-    "ACTION_REPETITION" : [5],
+    "ACTION_REPETITION" : [3],
     "INTEGRATOR_ACCURACY" :[0.005],
-    "NOISE_DECAY" : [0.99998]
+    "SIGMA_MIN" : [0],
+    "N_STEPS_ANNEALING" : [100000]
 }

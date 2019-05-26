@@ -9,10 +9,8 @@ import copy
 
 
 class SymmetricDDPGAgent(DDPGAgent):
-    def __init__(self, noise_decay, random_process_l, random_process_r, **kwargs):
+    def __init__(self, random_process_l, random_process_r, **kwargs):
         DDPGAgent.__init__(self, **kwargs)
-        self.noise_decay = noise_decay
-        self.noise_coeff = noise_decay
         self.random_process_l = random_process_l
         self.random_process_r = random_process_r
 
@@ -56,10 +54,8 @@ class SymmetricDDPGAgent(DDPGAgent):
             else:
                 noise = self.random_process_r.sample()
             
-            noise = noise * self.noise_coeff
             assert noise.shape == action.shape
             action += noise
-            self.noise_coeff = self.noise_coeff * self.noise_decay
             action += noise
 
         return action

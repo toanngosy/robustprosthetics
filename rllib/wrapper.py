@@ -92,7 +92,6 @@ class CustomRewardWrapper(gym.RewardWrapper):
         feet_y_penalty = 0
         legs_directions_penalty = 0
         velocity_feet_penalty = 0
-        knee_pelvis_penalty = 0  # this feature is not used
 
         state_desc = self.get_state_desc()
         prev_state_desc = self.get_prev_state_desc()
@@ -169,7 +168,7 @@ class CustomRewardWrapper(gym.RewardWrapper):
         else:
             mass_center_vel_penalty = -0.1
 
-        reward = np.log(1+mass_center_pos[0]) + legs_directions_penalty + \
+        reward =  legs_directions_penalty + \
             mass_center_vel_penalty + mass_center_y_penalty + \
             angle_pelvis_head_penalty + foot_split_penalty + \
             foot_pelvis_penalty + velocity_feet_penalty + feet_y_penalty
@@ -204,14 +203,11 @@ class CustomDoneOsimWrapper(OsimWrapper):
         # DEFINITION OF USEFUL BODY PARTS
         head = state_desc["body_pos"]["head"]
         pelvis = state_desc["body_pos"]["pelvis"]
-        base = [head[0], pelvis[1]]
         talus_r = state_desc["body_pos"]["talus_r"]
         talus_l = state_desc["body_pos"]["talus_l"]
-        talus_r_vel = state_desc["body_vel"]["talus_r"]
-        talus_l_vel = state_desc["body_vel"]["talus_l"]
         mass_center_pos = state_desc["misc"]["mass_center_pos"]
-        mass_center_vel = state_desc["misc"]["mass_center_vel"]
         diff_foot = np.hypot(talus_r[0] - talus_l[0], talus_r[1] - talus_l[1])
+        print("coucou")
 
         return mass_center_pos[1] < 0.8 or head[0] < -0.3 or head[1] < 1.35 or diff_foot > 1.3
 

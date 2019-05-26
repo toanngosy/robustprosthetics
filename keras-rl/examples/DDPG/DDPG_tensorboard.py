@@ -13,10 +13,10 @@ from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Flatten, Input, Add, concatenate
 #from keras.layers.normalization import BatchNormalization, LayerNormalization
 from keras.optimizers import Adam, SGD, RMSprop
-#from rl.agents import DDPGAgent
+from rl.agents import DDPGAgent
 from rl.memory import SequentialMemory
 from rl.random import OrnsteinUhlenbeckProcess
-from prioritizedDDPG import *
+# from prioritizedDDPG import *
 
 import argparse
 from datetime import datetime
@@ -25,7 +25,7 @@ from robustensorboard import RobustTensorBoard
 from check_files import check_xml, check_overwrite
 
 from wrapper import *
-from symmetricDDPG import *
+# from symmetricDDPG import *
 
 
 def get_args():
@@ -88,7 +88,9 @@ def main_function(args, data):
     ## Exploration ##
     THETA = data['THETA'][0]
     SIGMA = data['SIGMA'][0]
-    NOISE_DECAY = data['NOISE_DECAY'][0]
+    SIGMA_MIN = data['SIGMA_MIN'][0]
+    N_STEPS_ANNEALING = data['N_STEPS_ANNEALING'][0]
+
     ## Acceleration ##
     ACTION_REPETITION = data['ACTION_REPETITION'][0]
     INTEGRATOR_ACCURACY = data['INTEGRATOR_ACCURACY'][0]
@@ -119,15 +121,16 @@ def main_function(args, data):
 
     env.reset()
     # Examine the action space ##
-    action_size = int(env.action_space.shape[0]/2)
+    action_size = env.action_space.shape[0]
+    #action_size = int(env.action_space.shape[0]/2)    pour la symmétrie
     print('Size of each action:', action_size)
 
     # Examine the state space ##
     state_size = env.observation_space.shape[0]
     print('Size of state:', state_size)
 
-
     # #### ACTOR / CRITIC #####
+
     # Actor (mu) ##
     if args.prosthetic:
         input_shape = (1, env.observation_space.shape[0])
@@ -137,26 +140,16 @@ def main_function(args, data):
     observation_input = Input(shape=input_shape, name='observation_input')
 
     x = Flatten()(observation_input)
-
     x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
-    # x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
-    # x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
-    # x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
-    # x = Dense(action_size)(x)     #without symmetry
     x = Dense(action_size)(x)
-
     x = Activation('sigmoid')(x)
 
     actor = Model(inputs=observation_input, outputs=x)
-
     opti_actor = Adam(lr=LR_ACTOR)
 
 
@@ -165,19 +158,12 @@ def main_function(args, data):
 
     x = Flatten()(observation_input)
     x = concatenate([action_input, x])
-
     x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
-    # x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
-    # x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
-    # x = BatchNormalization()(x)
     x = Activation('relu')(x)
-
     x = Dense(1)(x)
     x = Activation('linear')(x)
 
@@ -191,19 +177,26 @@ def main_function(args, data):
     memory = SequentialMemory(limit=REPLAY_BUFFER_SIZE, window_length=1)
 
     # Random process (exploration) ##
-    # random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
-    #                                           size=action_size)
-    random_process_l = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
-                                            size=action_size)
-    random_process_r = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,
-                                            size=action_size)
+    random_process = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,sigma_min= SIGMA_MIN,
+                                            size=action_size, n_steps_annealing=N_STEPS_ANNEALING)
+
+    # random_process_l = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,sigma_min= SIGMA_MIN,
+    #                                           size=action_size, n_steps_annealing=N_STEPS_ANNEALING)
+    # random_process_r = OrnsteinUhlenbeckProcess(theta=THETA, mu=0, sigma=SIGMA,sigma_min= SIGMA_MIN,
+    #                                           size=action_size, n_steps_annealing=N_STEPS_ANNEALING)
 
     # Paramètres agent DDPG ##
-    agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+    # agent = SymmetricDDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
+    #                            critic_action_input=action_input,
+    #                            memory=memory, random_process_l=random_process_l, random_process_r=random_process_r,
+    #                            gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
+    #                            batch_size=BATCH_SIZE)
+
+    agent = DDPGAgent(nb_actions=action_size, actor=actor, critic=critic,
                             critic_action_input=action_input,
-                            memory=memory, random_process_l=random_process_l, random_process_r=random_process_r,
+                            memory=memory, random_process=random_process,
                             gamma=DISC_FACT, target_model_update=TARGET_MODEL_UPDATE,
-                            batch_size=BATCH_SIZE, nb_steps_warmup_critic=1000, nb_steps_warmup_actor=1000, noise_decay=NOISE_DECAY)
+                            batch_size=BATCH_SIZE)
 
     agent.compile(optimizer=[opti_critic, opti_actor])
 
@@ -218,16 +211,11 @@ def main_function(args, data):
         else:
             check_overwrite(args.model)
 
-        try:
-            agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
-                    verbose=VERBOSE, log_interval=LOG_INTERVAL,
-                    callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
+        agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
+                verbose=VERBOSE, log_interval=LOG_INTERVAL,
+                callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
 
-            agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
-
-        except KeyboardInterrupt:
-            print("interruption detected , saving weights....")
-            agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
 
 
     #### TEST #####
