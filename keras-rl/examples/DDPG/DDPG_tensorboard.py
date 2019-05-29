@@ -22,6 +22,7 @@ import argparse
 from datetime import datetime
 import json
 from robustensorboard import RobustTensorBoard
+from save_best import SaveBestEpisode
 from check_files import check_xml, check_overwrite
 
 from wrapper import *
@@ -115,7 +116,7 @@ def main_function(args, data):
 
     # #### CHARGEMENT DE L'ENVIRONNEMENT #####
     if args.prosthetic:
-        env = CustomRewardWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
+        env = ProsContinueRewardWrapper(ProstheticsEnv(visualize=args.visualize, integrator_accuracy=INTEGRATOR_ACCURACY))
     if not args.prosthetic:
         env = CustomDoneOsimWrapper(CustomRewardWrapper(RelativeMassCenterObservationWrapper(NoObstacleObservationWrapper(L2RunEnv(visualize=args.visualize, integrator_accuracy=0.005)))))
 
@@ -204,7 +205,7 @@ def main_function(args, data):
     # #### TRAIN #####
     logdir = "keras_logs/" + datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
     robustensorboard = RobustTensorBoard(log_dir=logdir, hyperparams=data)
-
+    saveBest = SaveBestEpisode()
     if args.train:
         if args.resume:
             agent.load_weights(FILES_WEIGHTS_NETWORKS)
@@ -213,7 +214,7 @@ def main_function(args, data):
 
         agent.fit(env, nb_steps=N_STEPS_TRAIN, visualize=args.visualize,
                 verbose=VERBOSE, log_interval=LOG_INTERVAL,
-                callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
+                callbacks=[robustensorboard, saveBest], action_repetition = ACTION_REPETITION)
 
         agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
 
