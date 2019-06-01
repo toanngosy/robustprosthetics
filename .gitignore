@@ -15,4 +15,7 @@ __pycache__/
 # Log
 *.log
 
+# Keras_logs
+**/keras_logs
+
 
