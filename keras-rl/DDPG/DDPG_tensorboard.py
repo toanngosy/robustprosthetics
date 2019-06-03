@@ -102,7 +102,8 @@ def main_function(args, data):
     if not os.path.exists('weights'):
         os.mkdir('weights')
         print("Directory ", 'weights',  " Created ")
-    FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
+    SAVE_FILES_WEIGHTS_NETWORKS = './weights/' + args.model + '.h5f'
+    LOAD_FILES_WEIGHTS_NETWORKS = './weights/' + args.model[:-2] + '.h5f'
 
 
     # #### CHARGEMENT DE L'ENVIRONNEMENT #####
@@ -182,7 +183,7 @@ def main_function(args, data):
 
     if args.train:
         if args.resume:
-            agent.load_weights(FILES_WEIGHTS_NETWORKS)
+            agent.load_weights(LOAD_FILES_WEIGHTS_NETWORKS)
         else:
             check_overwrite(args.model)
 
@@ -190,12 +191,12 @@ def main_function(args, data):
                 verbose=VERBOSE, log_interval=LOG_INTERVAL,
                 callbacks=[robustensorboard], action_repetition = ACTION_REPETITION)
 
-        agent.save_weights(FILES_WEIGHTS_NETWORKS, overwrite=True)
+        agent.save_weights(SAVE_FILES_WEIGHTS_NETWORKS, overwrite=True)
 
 
     #### TEST #####
     if not args.train:
-        agent.load_weights(FILES_WEIGHTS_NETWORKS)
+        agent.load_weights(LOAD_FILES_WEIGHTS_NETWORKS)
         agent.test(env, nb_episodes=N_EPISODE_TEST, visualize=args.visualize)
 
 
