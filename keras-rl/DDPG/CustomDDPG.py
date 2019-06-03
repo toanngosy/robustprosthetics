@@ -305,7 +305,7 @@ class CustomDDPGAgent(DDPGAgent):
 
                     # DONE :
                     if episode_reward > self.best_episode_reward :
-                        self.save_weights('.weights/temp_best_weight.h5f', overwrite=True)
+                        self.save_weights('./weights/temp_best_weight.h5f', overwrite=True)
                         print("Le modèle est meilleur : les poids ont été sauvegardés dans './weights/temp_best_weight.h5f'")
 
                     # This episode is finished, report and reset.
