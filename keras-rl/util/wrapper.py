@@ -209,7 +209,6 @@ class CustomDoneOsimWrapper(OsimWrapper):
         talus_l = state_desc["body_pos"]["talus_l"]
         mass_center_pos = state_desc["misc"]["mass_center_pos"]
         diff_foot = np.hypot(talus_r[0] - talus_l[0], talus_r[1] - talus_l[1])
-        print("coucou")
 
         return mass_center_pos[1] < 0.8 or head[0] < -0.3 or head[1] < 1.35 or diff_foot > 1.3
 
