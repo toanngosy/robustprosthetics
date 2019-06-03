@@ -107,6 +107,8 @@ class CustomRewardWrapper(gym.RewardWrapper):
         mass_center_pos = state_desc["misc"]["mass_center_pos"]
         mass_center_vel = state_desc["misc"]["mass_center_vel"]
 
+
+
         # LEGS : ensure that at least one leg is moving
         speed_l = np.sqrt(talus_l_vel[0]**2 + talus_l_vel[1]**2)
         speed_r = np.sqrt(talus_r_vel[0]**2 + talus_r_vel[1]**2)
@@ -168,7 +170,7 @@ class CustomRewardWrapper(gym.RewardWrapper):
         else:
             mass_center_vel_penalty = -0.1
 
-        reward =  legs_directions_penalty + \
+        reward =  mass_center_pos[0] + legs_directions_penalty + \
             mass_center_vel_penalty + mass_center_y_penalty + \
             angle_pelvis_head_penalty + foot_split_penalty + \
             foot_pelvis_penalty + velocity_feet_penalty + feet_y_penalty
@@ -196,7 +198,7 @@ class CustomDoneOsimWrapper(OsimWrapper):
     def __init__(self, env):
         super(CustomDoneOsimWrapper, self).__init__(env)
 
-    def is_done(self):
+    def is_done(self): 
         state_desc = self.get_state_desc()
         prev_state_desc = self.get_prev_state_desc()
 

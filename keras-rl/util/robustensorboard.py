@@ -44,6 +44,7 @@ class RobustTensorBoard(TensorBoard):
     def on_episode_end(self, episode, logs={}):
         new_logs = {}
         training_speed = (timeit.default_timer() - self.episode_start_time)/logs["nb_episode_steps"]
+        new_logs.update({"Mean Reward per Episode": logs["episode_reward"]/logs["nb_episode_steps"]})
         new_logs.update({"Total Reward per Episode (Distance Parcourue si reward pas changée)": logs["episode_reward"]})
         new_logs.update({"Training Speed per Episode": training_speed})
         new_logs.update({"Number Steps per Episode": logs["nb_episode_steps"]})

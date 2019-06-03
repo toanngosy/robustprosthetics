@@ -5,12 +5,12 @@
     "LR_CRITIC": [0.001],
     "DISC_FACT": [0.9],
     "TARGET_MODEL_UPDATE": [0.001],
-    "BATCH_SIZE": [32],
-    "REPLAY_BUFFER_SIZE": [100000],
+    "BATCH_SIZE": [128],
+    "REPLAY_BUFFER_SIZE": [10000],
     "THETA": [0.05],
-    "SIGMA": [0.2],
-    "ACTION_REPETITION" : [3],
+    "SIGMA": [0.01],
+    "ACTION_REPETITION" : [4],
     "INTEGRATOR_ACCURACY" :[0.005],
     "SIGMA_MIN" : [0],
-    "N_STEPS_ANNEALING" : [100000]
+    "N_STEPS_ANNEALING" : [50000]
 }
