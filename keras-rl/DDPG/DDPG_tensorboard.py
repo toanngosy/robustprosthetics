@@ -71,7 +71,8 @@ def main_function(args, data):
     ## Model ##
     SIZE_HIDDEN_LAYER_ACTOR = data['SIZE_HIDDEN_LAYER_ACTOR'][0]
     LR_ACTOR = data['LR_ACTOR'][0]
-    SIZE_HIDDEN_LAYER_CRITIC = data['SIZE_HIDDEN_LAYER_CRITIC'][0]
+    SIZE_HIDDEN_LAYER_CRITIC = SIZE_HIDDEN_LAYER_ACTOR * 2
+    DEPTH_NN = data['DEPTH_NN'][0]
     LR_CRITIC = data['LR_CRITIC'][0]
     DISC_FACT = data['DISC_FACT'][0]
     TARGET_MODEL_UPDATE = data['TARGET_MODEL_UPDATE'][0]
@@ -127,12 +128,9 @@ def main_function(args, data):
     observation_input = Input(shape=input_shape, name='observation_input')
 
     x = Flatten()(observation_input)
-    x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
-    x = Activation('relu')(x)
-    x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
-    x = Activation('relu')(x)
-    x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
-    x = Activation('relu')(x)
+    for i in range(DEPTH_NN):
+        x = Dense(SIZE_HIDDEN_LAYER_ACTOR)(x)
+        x = Activation('relu')(x)
     x = Dense(action_size)(x)
     x = Activation('sigmoid')(x)
 
@@ -145,12 +143,9 @@ def main_function(args, data):
 
     x = Flatten()(observation_input)
     x = concatenate([action_input, x])
-    x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
-    x = Activation('relu')(x)
-    x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
-    x = Activation('relu')(x)
-    x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
-    x = Activation('relu')(x)
+    for i in range(DEPTH_NN):
+        x = Dense(SIZE_HIDDEN_LAYER_CRITIC)(x)
+        x = Activation('relu')(x)
     x = Dense(1)(x)
     x = Activation('linear')(x)
 
