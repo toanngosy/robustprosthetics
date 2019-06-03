@@ -214,8 +214,13 @@ def main():
     params = get_param()
     multi_params, args = detect_multiparam(args, params)
     count = get_last_model(args.model)
+    if args.train:
+        args.model = args.model + "-" + str(count)
 
     if args.grid :
+        if args.test :
+            print("Les arguments --grid et --test sont incompatibles.")
+            return
         # Initialisation du compteur
         compteur = {}
         for param in params:
@@ -225,17 +230,16 @@ def main():
             while compteur[param] < len(params[param]):
                 print("Compteur pour le paramètre", param, ": ",compteur[param]+1)
                 print("Modele numero :", count)
-                args.model = args.model + "-" + str(count)
                 # Variable dynamique
                 locals()[param] = params[param][compteur[param]]
                 main_function(args, params)
                 # On passe à la valeur suivante
                 compteur[param] += 1
                 count += 1
+                args.model = args.model + "-" + str(count)
 
 
     else :
-        args.model = args.model + "-" + str(count)
         main_function(args, params)
 
 
