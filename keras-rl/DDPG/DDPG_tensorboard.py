@@ -210,8 +210,8 @@ def main():
     params = get_param()
     multi_params, args = detect_multiparam(args, params)
     count = get_last_model(args.model)
-    if args.train:
-        args.model = args.model + "-" + str(count)
+
+    args.model = args.model + "-" + str(count)
 
     if args.grid :
         if args.test :
