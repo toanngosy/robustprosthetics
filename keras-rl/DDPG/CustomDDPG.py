@@ -52,8 +52,8 @@ class CustomDDPGAgent(DDPGAgent):
 
 
             # We also store its symmetric
-            obs_sym, act_sym = self.transform2symmetric(self.recent_observation, self.recent_action)            
-            self.memory.append(obs_sym, act_sym, reward, terminal, training=self.training)
+            # obs_sym, act_sym = self.transform2symmetric(self.recent_observation, self.recent_action)            
+            # self.memory.append(obs_sym, act_sym, reward, terminal, training=self.training)
 
 
         metrics = [np.nan for _ in self.metrics_names]
