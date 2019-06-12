@@ -200,51 +200,39 @@ class ProsStartRewardWrapper(gym.RewardWrapper):
         state_desc = self.get_state_desc()
         prev_state_desc = self.get_prev_state_desc()
 
-        ret_r = 0
+        head = state_desc["body_pos"]["head"]
+        pelvis = state_desc["body_pos"]["pelvis"]
+
+        reward = 0
         if prev_state_desc is None:
             x_offset = 0
         else:
-            x_offset = state_desc["body_pos"]["pelvis"][
-                0] - prev_state_desc["body_pos"]["pelvis"][0]
+            x_offset = pelvis[0] - prev_state_desc["body_pos"]["pelvis"][0]
 
-        ret_r += x_offset
+        reward += x_offset
 
         if prev_state_desc is not None:
             l_foot_reward = state_desc["body_pos"]["tibia_l"][
                 0] - prev_state_desc["body_pos"]["tibia_l"][0]
             r_foot_reward = state_desc["body_pos"]["pros_tibia_r"][
                 0] - prev_state_desc["body_pos"]["pros_tibia_r"][0]
-            ret_r += max(l_foot_reward, r_foot_reward)
+            reward += max(l_foot_reward, r_foot_reward)
 
-        # penalty
-        headx = state_desc['body_pos']['head'][0]
-        px = state_desc['body_pos']['pelvis'][0]
-        headz = state_desc['body_pos']['head'][2]
-        pz = state_desc['body_pos']['pelvis'][2]
-        kneer = state_desc['joint_pos']['knee_r'][-1]
-        kneel = state_desc['joint_pos']['knee_l'][-1]
+        # HEAD : Ensure that the angle between the head and the pelvis is correct
+        headx = head[0]
+        px = pelvis[0]
+        headz = head[2]
+        pz = pelvis[2]
+
         lean_x = min(0.3, max(0, px - headx)) * 0.2
         lean_z = min(0.3, max(0, pz - headz - 0.15)) * 0.05
-        joint = sum([max(0, k - 0.1) for k in [kneer, kneel]]) * 0.03
-        penalty = lean_x + lean_z + joint
+        penalty = lean_x + lean_z
 
-        ret_r -= penalty * 0.15
+        reward -= penalty * 0.15
 
         if px > 0:
-            return px * 2 + (ret_r)*10
+            return px * 2 + (reward)*10
         return 0
-
-    def step(self, action):
-        reward = 0
-
-        for i in range(4):
-            observation, r, _, info = self.env.step(action, project=True)
-            reward += self.reward(r)
-            done = self.env.is_done()
-            if done:
-                break
-        return observation, reward, done, {}
-
 
 # wrapper for reward
 class ProsContinueRewardWrapper(gym.RewardWrapper):
@@ -273,6 +261,7 @@ class ProsContinueRewardWrapper(gym.RewardWrapper):
 
         talus_l_vel = state_desc["body_vel"]["talus_l"]
         pros_foot_r_pos = state_desc["body_pos"]["pros_foot_r"]
+        pros_foot_r_vel = state_desc["body_vel"]["pros_foot_r"]
         mass_center_pos = state_desc["misc"]["mass_center_pos"]
         mass_center_vel = state_desc["misc"]["mass_center_vel"]
 
@@ -302,6 +291,10 @@ class ProsContinueRewardWrapper(gym.RewardWrapper):
         if diff_foot > foot_split_treshold:
             foot_split_penalty = -diff_foot *0.2
 
+        # FEET : Ensure that the model isn't jumping
+        if (pros_foot_r_pos[1] > 0.2 and talus_l[1] > 0.2):
+            jump_penalty = -0.4
+
 	# PELVIS : ensure that we move forward
         if prev_state_desc is None:
             x_offset = 0
@@ -310,46 +303,40 @@ class ProsContinueRewardWrapper(gym.RewardWrapper):
                 0] - prev_state_desc["body_pos"]["pelvis"][0]
         reward += x_offset
 
+        # LEGS : ensure that legs move in different directions :
+        if (talus_l_vel[0] < -0.1 and pros_foot_r_vel[0] > 0.1) or (pros_foot_r_vel[0] < -0.1 and talus_l_vel[0] > 0.1):
+            legs_directions_penalty = 0
+        else:
+            legs_directions_penalty = -0.05
+
 	# FEET : ensure that one feet is moving
         if prev_state_desc is not None:
             l_foot_reward = state_desc["body_pos"]["tibia_l"][
                 0] - prev_state_desc["body_pos"]["tibia_l"][0]
             r_foot_reward = state_desc["body_pos"]["pros_tibia_r"][
                 0] - prev_state_desc["body_pos"]["pros_tibia_r"][0]
-            reward += max(l_foot_reward, r_foot_reward)
+            reward += max(l_foot_reward, r_foot_reward) * 0.5
 
-        # penalty
-        headx = state_desc['body_pos']['head'][0]
-        px = state_desc['body_pos']['pelvis'][0]
-        headz = state_desc['body_pos']['head'][2]
-        pz = state_desc['body_pos']['pelvis'][2]
-        kneer = state_desc['joint_pos']['knee_r'][-1]
-        kneel = state_desc['joint_pos']['knee_l'][-1]
+        # HEAD : Ensure that the angle between the head and the pelvis is correct
+        headx = head[0]
+        px = pelvis[0]
+        headz = head[2]
+        pz = pelvis[2]
+
         lean_x = min(0.3, max(0, px - headx)) * 0.2
         lean_z = min(0.3, max(0, pz - headz - 0.15)) * 0.05
-        joint = sum([max(0, k - 0.1) for k in [kneer, kneel]]) * 0.03
-        penalty = lean_x + lean_z + joint
+        penalty = lean_x + lean_z
 
         reward -= penalty * 0.15
 
-        penalty2 = mass_center_y_penalty + cross_foot_penalty + pevis_z_penalty + foot_split_penalty
+        penalty2 = mass_center_y_penalty + cross_foot_penalty + pevis_z_penalty + foot_split_penalty + legs_directions_penalty + foot_pelvis_penalty + jump_penalty  + feet_info
         reward += penalty2 * 0.05
 
         if not prev_state_desc:
             return 0
-        return reward * 20     
-    
-    def step(self, action):
-        reward = 0
-
-        for i in range(4):
-            observation, r, _, info = self.env.step(action, project=True)
-            reward += self.reward(r)
-            done = self.env.is_done()
-            if done:
-                break
-        return observation, reward, done, {}
-
+        if px > 0:
+            return (math.log(1+px) + (reward)*0.5)*10
+        return 0
 
 # wrapper for Custom Done Osim
 class CustomDoneOsimWrapper(OsimWrapper):
